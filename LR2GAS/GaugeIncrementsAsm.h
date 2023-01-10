@@ -15,10 +15,17 @@ class Gauge final
 public:
 	Gauge() = default;
 
-	Gauge(const double initialGauge, const double lowLimit, const double topLimit, const struct GaugeIncrements& gaugeIncrements) :
+	Gauge(const double initialGauge,
+			const double lowLimit,
+			const double topLimit,
+			const double failLimit,
+			const bool reduceDamage,
+			const GaugeIncrements& gaugeIncrements) :
 		vGauge(initialGauge),
 		lowLimit(lowLimit),
 		topLimit(topLimit),
+		failLimit(failLimit),
+		reduceDamage(reduceDamage),
 		pgreatInc(gaugeIncrements.pgreat),
 		greatInc(gaugeIncrements.great),
 		goodInc(gaugeIncrements.good),
@@ -38,23 +45,17 @@ public:
 	{
 		return vGauge;
 	}
+	bool getFailed()
+	{
+		return failed;
+	}
 
-	// TODO: gaugeType should be an enum.
-	void IncrementGauge(const int judgement, const int gaugeType)
+	void IncrementGauge(const int judgement)
 	{
 		switch (judgement)
 		{
 		case 0:
-			if (CheckLowLimit(mashPoorInc) != 0)
-			{
-				break;
-			}
-			if (gaugeType != 1)
-			{
-				vGauge += mashPoorInc;
-				break;
-			}
-			if (vGauge <= 32)
+			if (reduceDamage && vGauge < 32)
 			{
 				vGauge += mashPoorInc * 0.6;
 			}
@@ -64,16 +65,7 @@ public:
 			}
 			break;
 		case 1:
-			if (CheckLowLimit(missPoorInc) != 0)
-			{
-				break;
-			}
-			if (gaugeType != 1)
-			{
-				vGauge += missPoorInc;
-				break;
-			}
-			if (vGauge <= 32)
+			if (reduceDamage && vGauge < 32)
 			{
 				vGauge += missPoorInc * 0.6;
 			}
@@ -83,16 +75,7 @@ public:
 			}
 			break;
 		case 2:
-			if (CheckLowLimit(badInc) != 0)
-			{
-				break;
-			}
-			if (gaugeType != 1)
-			{
-				vGauge += badInc;
-				break;
-			}
-			if (vGauge <= 32)
+			if (reduceDamage && vGauge < 32)
 			{
 				vGauge += badInc * 0.6;
 			}
@@ -102,34 +85,24 @@ public:
 			}
 			break;
 		case 3:
-			if (CheckTopLimit(goodInc) != 0)
-			{
-				break;
-			}
 			vGauge += goodInc;
 			break;
 		case 4:
-			if (CheckTopLimit(greatInc) != 0)
-			{
-				break;
-			}
 			vGauge += greatInc;
 			break;
 		case 5:
-			if (CheckTopLimit(pgreatInc) != 0)
-			{
-				break;
-			}
 			vGauge += pgreatInc;
 			break;
 		default:
 			break;
 		}
+		CheckTopLimit();
+		CheckLowLimit();
+		CheckFailLimit();
 	}
 
 private:
 	double vGauge = 0.0;
-
 	double pgreatInc = 0.0;
 	double greatInc = 0.0;
 	double goodInc = 0.0;
@@ -138,34 +111,42 @@ private:
 	double mashPoorInc = 0.0;
 	double lowLimit = 0.0;
 	double topLimit = 0.0;
-	int decideIncrement = 0;
+	double failLimit = 0.0;
+	bool reduceDamage = false;
+	bool failed = false;
 
-	bool CheckLowLimit(const double increment)
+	void CheckLowLimit()
 	{
-		if (vGauge + increment < lowLimit)
+		if (vGauge < lowLimit)
 		{
 			vGauge = lowLimit;
-			return true;
 		}
-		return false;
 	}
 
-	bool CheckTopLimit(const double increment)
+	void CheckTopLimit()
 	{
-		if (vGauge + increment > topLimit)
+		if (vGauge > topLimit)
 		{
 			vGauge = topLimit;
-			return true;
 		}
-		return false;
+	}
+
+	void CheckFailLimit()
+	{
+		if (vGauge < failLimit)
+		{
+			failed = true;
+		}
 	}
 };
 
 namespace GetIncrements
 {
 	void HookIncrements();
-	double Total();
+	double ModifyDamage();
 	GaugeIncrements Easy();
 	GaugeIncrements Groove();
 	GaugeIncrements Hard();
+	GaugeIncrements Hazard();
+	GaugeIncrements PAttack();
 }

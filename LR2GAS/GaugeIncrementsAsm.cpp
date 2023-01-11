@@ -72,8 +72,8 @@ namespace
 
 	int cycleNumber = 0;
 
-	double notesNum = 0.0;
-	double totalNum = 0.0;
+	int notesNum = 0;
+	int totalNum = 0;
 
 	GaugeIncrements easy = {};
 	GaugeIncrements groove = {};
@@ -515,12 +515,10 @@ void GetIncrements::HookIncrements()
 
 GaugeIncrements GetIncrements::Easy()
 {
-	constexpr double easyConst = 1.2;
-
 	GaugeIncrements result;
-	result.pgreat = easyConst * (totalNum / notesNum);
-	result.great = easyConst * (totalNum / notesNum);
-	result.good = easyConst * (totalNum / (notesNum * 2.0));
+	result.pgreat = 1.2 * totalNum / notesNum;
+	result.great = 1.2 * totalNum / notesNum;
+	result.good = 0.6 * totalNum / notesNum;
 	result.mashPoor = -1.6;
 	result.bad = -3.2;
 	result.missPoor = -4.8;
@@ -531,9 +529,9 @@ GaugeIncrements GetIncrements::Easy()
 GaugeIncrements GetIncrements::Groove()
 {
 	GaugeIncrements result;
-	result.pgreat = totalNum / notesNum;
-	result.great = totalNum / notesNum;
-	result.good = totalNum / (notesNum * 2.0);
+	result.pgreat = 1.0 * totalNum / notesNum;
+	result.great = 1.0 * totalNum / notesNum;
+	result.good = 0.5 * totalNum / notesNum;
 	result.mashPoor = -2.0;
 	result.bad = -4.0;
 	result.missPoor = -6.0;
@@ -541,79 +539,39 @@ GaugeIncrements GetIncrements::Groove()
 	return result;
 }
 
-// https://github.com/wcko87/lr2oraja/blob/lr2oraja/src/bms/player/beatoraja/play/GrooveGauge.java
 double GetIncrements::ModifyDamage()
 {
-	double fix1 = 1.0;
-	if (totalNum >= 240.0)
-	{
-		fix1 = 1.0;
-	}
-	else if (totalNum >= 230.0)
-	{
-		fix1 = 1.11;
-	}
-	else if (totalNum >= 210.0)
-	{
-		fix1 = 1.25;
-	}
-	else if (totalNum >= 200.0)
-	{
-		fix1 = 1.5;
-	}
-	else if (totalNum >= 180.0)
-	{
-		fix1 = 1.666;
-	}
-	else if (totalNum >= 160.0)
-	{
-		fix1 = 2.0;
-	}
-	else if (totalNum >= 150.0)
-	{
-		fix1 = 2.5;
-	}
-	else if (totalNum >= 130.0)
-	{
-		fix1 = 3.333;
-	}
-	else if (totalNum >= 120.0)
-	{
-		fix1 = 5.0;
-	}
-	else
-	{
-		fix1 = 10.0;
-	}
+	double fix1 = 10.0 / min(10, max(1, totalNum / 16 - 5));
 
+	// https://github.com/exch-bms2/beatoraja/pull/628
 	double fix2 = 1.0;
-	if (notesNum < 20.0)
+	if (notesNum < 20)
 	{
 		fix2 = 10.0;
 	}
-	else if (notesNum < 30.0)
+	else if (notesNum < 30)
 	{
-		fix2 = 8.0 + 0.2 * (30.0 - notesNum);
+		fix2 = 8.0 + (30.0 - notesNum) / 5.0;
 	}
-	else if (notesNum < 60.0)
+	else if (notesNum < 60)
 	{
-		fix2 = 5.0 + 0.2 * (60.0 - notesNum) / 3.0;
+		fix2 = 5.0 + (60.0 - notesNum) / 15.0;
 	}
-	else if (notesNum < 125.0)
+	else if (notesNum < 125)
 	{
 		fix2 = 4.0 + (125.0 - notesNum) / 65.0;
 	}
-	else if (notesNum < 250.0)
+	else if (notesNum < 250)
 	{
-		fix2 = 3.0 + 0.008 * (250.0 - notesNum);
+		fix2 = 3.0 + (250.0 - notesNum) / 125.0;
 	}
-	else if (notesNum < 500.0)
+	else if (notesNum < 500)
 	{
-		fix2 = 2.0 + 0.004 * (500.0 - notesNum);
+		fix2 = 2.0 + (500.0 - notesNum) / 250.0;
 	}
-	else if (notesNum < 1000.0)
+	else if (notesNum < 1000)
 	{
-		fix2 = 1.0 + 0.002 * (1000.0 - notesNum);
+		fix2 = 1.0 + (1000.0 - notesNum) / 500.0;
 	}
 	else
 	{

@@ -57,10 +57,11 @@ namespace
 	int* vBattleType = (int*)0x0EF884;
 	int* vAutoplay = (int*)0x0F6668;
 	int* vReplay = (int*)0x0F83AC;
-	int* vCourse = (int*)0x0F8470;
 
 	int initialGauge = 0;
 	int restoreGaugeStatus = 0;
+
+	bool isCourse = 0;
 
 	// TODO: This should be an enum.
 	int* gaugeType = (int*)0x0EF840;
@@ -68,7 +69,6 @@ namespace
 	int battleType = 0;
 	int autoplay = 0;
 	int replay = 0;
-	int course = 0;
 
 	int cycleNumber = 0;
 
@@ -139,7 +139,7 @@ namespace
 
 	bool GASDeactivated()
 	{
-		if (course == 1 || (autoplay == 1 && replay == 0) || battleType == 1 || *gaugeType == 5)
+		if (isCourse || (autoplay == 1 && replay == 0) || battleType == 1 || *gaugeType == 5)
 		{
 			return true;
 		}
@@ -150,7 +150,7 @@ namespace
 	{
 		if (GASDeactivated())
 		{
-			if (course == 1)
+			if (isCourse)
 			{
 				std::cout << "Course detected, GAS deactivated" << std::endl;
 			}
@@ -317,7 +317,7 @@ namespace
 			*gaugeType = initialGauge;
 			restoreGaugeStatus = 0;
 		}
-		std::cout << "LoadSkin GaugeRestore, restoreGaugeStatus: " << restoreGaugeStatus << ", gaugeType: " << *gaugeType << std::endl;
+		std::cout << "GaugeRestore end, restoreGaugeStatus: " << restoreGaugeStatus << ", gaugeType: " << *gaugeType << std::endl;
 	}
 
 	void IncrementGaugesThread(int judgement)
@@ -462,10 +462,23 @@ namespace
 		battleType = *vBattleType;
 		autoplay = *vAutoplay;
 		replay = *vReplay;
-		course = *vCourse;
 
 		Initialize();
 		InitGaugesThread();
+	}
+
+	void SwitchForCourses()
+	{
+		std::cout << "SwitchForCourses" << std::endl;
+		isCourse = 1;
+		ThreadStarter();
+	}
+
+	void SwitchForNormal()
+	{
+		std::cout << "SwitchForNormal" << std::endl;
+		isCourse = 0;
+		ThreadStarter();
 	}
 }
 
@@ -497,20 +510,21 @@ void GetIncrements::HookIncrements()
 		vBattleType = (int*)(0x0EF884 + g_win10Offset);
 		vAutoplay = (int*)(0x0F6668 + g_win10Offset);
 		vReplay = (int*)(0x0F83AC + g_win10Offset);
-		vCourse = (int*)(0x0F8470 + g_win10Offset);
 
 		gaugeType = (int*)(0x0EF840 + g_win10Offset);
 	}
 	std::cout << "winver: " << g_winver << '\n';
 	std::cout << "win10Offset: " << g_win10Offset << std::endl;
 
-	mem::Detour32((void*)(moduleBase + 0x0B59FF), (void*)&ThreadStarter, 6);
 	mem::Detour32((void*)(moduleBase + 0x0AD669), (void*)&ThreadStarter, 5);
 	mem::Detour32((void*)(moduleBase + 0x006308), (void*)&IncrementGauges, 5);
 	mem::Detour32((void*)(moduleBase + 0x0C16BB), (void*)&IncrementReplayGauges, 5);
 	mem::Detour32((void*)(moduleBase + 0x01F2EF), (void*)&SetGraph, 6);
 	mem::Detour32((void*)(moduleBase + 0x005C45), (void*)&WriteGraph, 6);
 	mem::Detour32((void*)(moduleBase + 0x031A74), (void*)&GaugeRestore, 5);
+	mem::Detour32((void*)(moduleBase + 0x0B5A88), (void*)&SwitchForCourses, 6);
+	mem::Detour32((void*)(moduleBase + 0x0B5B82), (void*)&SwitchForCourses, 6);
+	mem::Detour32((void*)(moduleBase + 0x0B5C02), (void*)&SwitchForNormal, 6);
 }
 
 GaugeIncrements GetIncrements::Easy()

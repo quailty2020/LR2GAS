@@ -457,9 +457,14 @@ namespace
 
 	void ThreadStarter()
 	{
+		battleType = *vBattleType;
+		std::cout << "ThreadStarter, battleType: " << battleType << std::endl;
+	}
+
+	void GASInitialize()
+	{
 		notesNum = *vNotesNum;
 		totalNum = *vTotalNum;
-		battleType = *vBattleType;
 		autoplay = *vAutoplay;
 		replay = *vReplay;
 
@@ -471,14 +476,14 @@ namespace
 	{
 		std::cout << "SwitchForCourses" << std::endl;
 		isCourse = 1;
-		ThreadStarter();
+		GASInitialize();
 	}
 
 	void SwitchForNormal()
 	{
 		std::cout << "SwitchForNormal" << std::endl;
 		isCourse = 0;
-		ThreadStarter();
+		GASInitialize();
 	}
 }
 
@@ -516,7 +521,8 @@ void GetIncrements::HookIncrements()
 	std::cout << "winver: " << g_winver << '\n';
 	std::cout << "win10Offset: " << g_win10Offset << std::endl;
 
-	mem::Detour32((void*)(moduleBase + 0x0AD669), (void*)&ThreadStarter, 5);
+	mem::Detour32((void*)(moduleBase + 0x0B59FF), (void*)&ThreadStarter, 6);
+	mem::Detour32((void*)(moduleBase + 0x0AD669), (void*)&GASInitialize, 5);
 	mem::Detour32((void*)(moduleBase + 0x006308), (void*)&IncrementGauges, 5);
 	mem::Detour32((void*)(moduleBase + 0x0C16BB), (void*)&IncrementReplayGauges, 5);
 	mem::Detour32((void*)(moduleBase + 0x01F2EF), (void*)&SetGraph, 6);
